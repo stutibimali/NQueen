@@ -58,7 +58,7 @@ class NQueensUI:
     def __init__(self, root):
         self.board_size = random.choice([4, 6, 8])
         self.root = root
-        self.colors = random.sample(["red", "green", "blue", "yellow", "purple", "cyan", "magenta", "orange"], self.board_size)
+        self.colors = random.sample(["crimson", "green", "blue", "yellow", "purple", "cyan", "magenta", "orange"], self.board_size)
 
         self.solution = generate_nqueens_solution(self.board_size)
         self.grid_generator = GridGenerator(self.board_size, self.colors)
