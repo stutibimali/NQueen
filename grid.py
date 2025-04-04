@@ -14,8 +14,8 @@ class GridGenerator:
         random.seed(current_date)
         color_assignment = {}
         used_colors = set()
-
-        # Assign unique color to each queen position
+        
+        # Assign a unique color to each queen
         for row in range(self.board_size):
             col = solution[row]
             available_colors = [c for c in self.colors if c not in used_colors]
@@ -24,49 +24,44 @@ class GridGenerator:
             color_assignment[(row, col)] = color
             used_colors.add(color)
 
-        # Grow each region from queen positions to form color blocks
+        # Grow each color block around its queen
         for (row, col), color in color_assignment.items():
-            self.grow_region(row, col, color, solution)
+            self.grow_color_block(row, col, color)
 
-        self.fill_uncolored_cells()
+        self.fill_remaining_cells()
         return self.color_grid
 
-    def grow_region(self, start_row, start_col, color, solution):
-        queue = [(start_row, start_col)]
+    def grow_color_block(self, row, col, color):
+        queue = [(row, col)]
+        max_cells = random.randint(3, self.board_size * 2)
         filled = 0
-        max_fill = random.randint(3, self.board_size * 2)
 
-        while queue and filled < max_fill:
-            row, col = queue.pop(0)
-            if self.color_grid[row][col] != color:
-                continue
-            filled += 1
-
-            for ni, nj in [(row-1, col), (row+1, col), (row, col-1), (row, col+1)]:
-                if (0 <= ni < self.board_size and 0 <= nj < self.board_size and
-                    self.color_grid[ni][nj] is None and (ni, nj) not in solution):
+        while queue and filled < max_cells:
+            current = queue.pop(0)
+            for ni, nj in [(current[0]-1, current[1]), (current[0]+1, current[1]),
+                           (current[0], current[1]-1), (current[0], current[1]+1)]:
+                if (0 <= ni < self.board_size and 0 <= nj < self.board_size and 
+                    self.color_grid[ni][nj] is None):
                     self.color_grid[ni][nj] = color
                     queue.append((ni, nj))
+                    filled += 1
 
-    def fill_uncolored_cells(self):
+    def fill_remaining_cells(self):
         for i in range(self.board_size):
             for j in range(self.board_size):
                 if self.color_grid[i][j] is None:
-                    neighbors = [self.color_grid[ni][nj] for ni, nj in [(i-1, j), (i+1, j), (i, j-1), (i, j+1)] 
+                    neighbors = [self.color_grid[ni][nj] for ni, nj in [(i-1, j), (i+1, j), (i, j-1), (i, j+1)]
                                  if 0 <= ni < self.board_size and 0 <= nj < self.board_size and self.color_grid[ni][nj]]
-                    if neighbors:
-                        self.color_grid[i][j] = random.choice(neighbors)
-                    else:
-                        self.color_grid[i][j] = random.choice(self.colors)
+                    self.color_grid[i][j] = random.choice(neighbors) if neighbors else random.choice(self.colors)
 
 class NQueensUI:
-    def __init__(self, root, board_size=8):
+    def __init__(self, root):
+        self.board_size = random.choice([4, 6, 8])
         self.root = root
-        self.board_size = board_size
-        self.colors = ["red", "green", "blue", "yellow", "purple", "cyan", "magenta", "orange"]
+        self.colors = random.sample(["red", "green", "blue", "yellow", "purple", "cyan", "magenta", "orange"], self.board_size)
 
         self.solution = generate_nqueens_solution(self.board_size)
-        self.grid_generator = GridGenerator(board_size, self.colors)
+        self.grid_generator = GridGenerator(self.board_size, self.colors)
         self.canvas = tk.Canvas(root, width=400, height=400)
         self.canvas.pack()
 
@@ -94,5 +89,5 @@ class NQueensUI:
 if __name__ == "__main__":
     root = tk.Tk()
     root.title("N-Queens Grid")
-    app = NQueensUI(root, board_size=8)
+    app = NQueensUI(root)
     root.mainloop()
