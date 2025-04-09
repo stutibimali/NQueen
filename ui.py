@@ -4,6 +4,8 @@ import time
 from grid import GridGenerator
 from solution import generate_nqueens_solution
 import random
+from datetime import datetime, timedelta
+
 
 class NQueensGame:
     def __init__(self, root):
@@ -152,10 +154,77 @@ class NQueensGame:
     def end_game(self):
         self.game_active = False
         elapsed_time = int(time.time() - self.start_time)
-        self.error_label.config(text=f"Congratulations! You completed the challenge in {elapsed_time}s", foreground="green")
-        self.previous_scores.append(f"Time: {elapsed_time}s")
+        today = self.get_today_date()
+
+        # Save score
+        score_entry = f"{today} - Time: {elapsed_time}s"
+        self.previous_scores.append(score_entry)
         self.save_scores()
-        self.start_time = None
+
+        # Update streak
+        streak = self.update_streak_data()
+
+        # Show completion screen
+        self.show_completion_screen(elapsed_time, streak)
+
+    
+    #streak and score logic
+    def get_today_date(self):
+        return datetime.now().strftime("%Y-%m-%d")
+
+    def load_streak_data(self):
+        try:
+            with open("streak.txt", "r") as f:
+                data = f.read().strip().split(",")
+                last_date = data[0]
+                streak = int(data[1])
+                return last_date, streak
+        except FileNotFoundError:
+            return "", 0
+
+    def update_streak_data(self):
+        today = self.get_today_date()
+        last_date, streak = self.load_streak_data()
+        
+        if last_date == today:
+            return streak  # already counted
+        elif last_date == (datetime.now() - timedelta(days=1)).strftime("%Y-%m-%d"):
+            streak += 1
+        else:
+            streak = 1
+
+        with open("streak.txt", "w") as f:
+            f.write(f"{today},{streak}")
+        
+        return streak
+
+    def get_today_times(self):
+        today = self.get_today_date()
+        times = []
+        for score in self.previous_scores:
+            if score.startswith(today):
+                times.append(int(score.split("Time: ")[1].replace("s", "")))
+        return times
+    # Completion Ui function
+    def show_completion_screen(self, time_taken, streak):
+        for widget in self.root.winfo_children():
+            widget.destroy()
+
+        frame = ttk.Frame(self.root, padding="20")
+        frame.pack(expand=True)
+
+        ttk.Label(frame, text="👑 You're crushing it!", font=("Arial", 18, "bold")).pack(pady=10)
+        ttk.Label(frame, text=f"Queens placed! 🕐 {time_taken}s", font=("Arial", 14)).pack(pady=5)
+
+        today_times = self.get_today_times()
+        avg_time = sum(today_times) // len(today_times) if today_times else 0
+        ttk.Label(frame, text=f"Today's Avg: {avg_time}s", font=("Arial", 12, "italic")).pack(pady=5)
+
+        ttk.Label(frame, text=f"🔥 Current Streak: {streak} day{'s' if streak > 1 else ''}", font=("Arial", 12)).pack(pady=10)
+
+        ttk.Button(frame, text="Play Again", command=self.start_game).pack(pady=5)
+        ttk.Button(frame, text="Back to Home", command=self.show_welcome_screen).pack(pady=5)
+
 
 if __name__ == "__main__":
     root = tk.Tk()
