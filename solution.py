@@ -9,7 +9,7 @@ def generate_nqueens_solution(board_size, use_ml=False):
     def is_safe(queens, row, col):
         for r in range(row):
             c = queens[r]
-            if c == col or abs(row - r) == abs(col - c):
+            if c == col or (abs(row - r) ==1 and abs(col - c)==1):
                 return False
         return True
 

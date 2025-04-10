@@ -147,7 +147,7 @@ class NQueensGame:
 
     def is_valid_placement(self, row, col):
         for (r, c), valid in self.queen_positions.items():
-            if r == row or c == col or abs(r - row) == abs(c - col):
+            if r == row or c == col or (abs(r - row)==1 and  abs(c - col)==1):
                 return False
         return True
 
