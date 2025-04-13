@@ -4,22 +4,29 @@ from datetime import datetime
 from solution import generate_nqueens_solution
 
 class GridGenerator:
-    def __init__(self, board_size, colors):
+    def __init__(self, board_size, colors,seed=None):
         self.board_size = board_size
         self.colors = colors
+        self.seed = seed
         self.color_grid = [[None for _ in range(board_size)] for _ in range(board_size)]
-
+        if seed is not None:
+            random.seed(seed)
     def generate_grid(self, solution):
         current_date = datetime.now().strftime("%Y%m%d")
-        random.seed(current_date)
+        random.seed()
         color_assignment = {}
         used_colors = set()
         
         # Assign a unique color to each queen
         for row in range(self.board_size):
             col = solution[row]
-            available_colors = [c for c in self.colors if c not in used_colors]
-            color = random.choice(available_colors)
+            if len(used_colors) == len(self.colors):
+                # If not enough unique colors, reuse from full list
+                color = random.choice(self.colors)
+            else:
+                available_colors = [c for c in self.colors if c not in used_colors]
+                color = random.choice(available_colors)
+
             self.color_grid[row][col] = color
             color_assignment[(row, col)] = color
             used_colors.add(color)
@@ -56,9 +63,20 @@ class GridGenerator:
 
 class NQueensUI:
     def __init__(self, root):
-        self.board_size = random.choice([4, 6, 8])
+        self.streak = self.load_streak()  # You should track it already
+        self.board_size = min(4 + self.streak, 14)  # Cap at 14x14 to avoid crazy boards
         self.root = root
-        self.colors = random.sample(["crimson", "green", "blue", "yellow", "purple", "cyan", "magenta", "orange"], self.board_size)
+        import colorsys
+
+        def generate_distinct_colors(n):
+            colors = []
+            for i in range(n):
+                hue = i / n
+                r, g, b = colorsys.hsv_to_rgb(hue, 0.7, 0.9)
+                colors.append(f'#{int(r*255):02x}{int(g*255):02x}{int(b*255):02x}')
+            return colors
+
+        self.colors = generate_distinct_colors(self.board_size)
 
         self.solution = generate_nqueens_solution(self.board_size)
         self.grid_generator = GridGenerator(self.board_size, self.colors)
