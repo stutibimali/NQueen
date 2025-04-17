@@ -1,15 +1,19 @@
 import random
 import numpy as np
 from sklearn.ensemble import RandomForestClassifier
+from collections import defaultdict
 
-def generate_nqueens_solution(board_size, use_ml=True, seed=None):
+def generate_nqueens_solution(board_size, use_ml=True, use_rl=False, seed=None):
     if seed is not None:
         random.seed(seed)
+    if use_rl:
+        solution = rl_nqueens_solver(board_size)
+        if solution and is_valid_solution(solution):
+            return solution
     if use_ml:
         solution = ml_nqueens_solver(board_size)
         if solution and is_valid_solution(solution):
             return solution
-
     return backtracking_solver(board_size)
 
 def is_valid_solution(queens):
@@ -54,4 +58,40 @@ def ml_nqueens_solver(board_size):
     model.fit(X_train, y_train)
 
     X_test = np.array([[i] for i in range(board_size)])
-    prediction = model
+    prediction = model.predict(X_test)
+
+    return prediction.tolist()
+
+def rl_nqueens_solver(board_size):
+    Q = defaultdict(float)
+    episodes = 1000
+
+    def get_state_key(state):
+        return tuple(state)
+
+    def is_valid(state, row, col):
+        for r in range(row):
+            if state[r] == col or abs(r - row) == abs(state[r] - col):
+                return False
+        return True
+
+    for _ in range(episodes):
+        state = [-1] * board_size
+        for row in range(board_size):
+            actions = [c for c in range(board_size) if is_valid(state, row, c)]
+            if not actions:
+                break
+            action = np.random.choice(actions)
+            state[row] = action
+            Q[(get_state_key(state), action)] += 1.0
+
+    state = [-1] * board_size
+    for row in range(board_size):
+        valid_actions = [(action, Q[(get_state_key(state), action)])
+                         for action in range(board_size) if is_valid(state, row, action)]
+        if not valid_actions:
+            return None
+        best_action = max(valid_actions, key=lambda x: x[1])[0]
+        state[row] = best_action
+
+    return state
