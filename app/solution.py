@@ -4,6 +4,9 @@ from sklearn.ensemble import RandomForestClassifier
 from collections import defaultdict
 import pickle
 import os
+import sys
+sys.path.insert(0, os.path.abspath(os.path.join(os.path.dirname(__file__), '..')))
+from config import MODEL_DIR
 
 def generate_nqueens_solution(board_size, use_ml=True, use_rl=False, seed=None):
     if seed is not None:
@@ -53,7 +56,7 @@ def backtracking_solver(board_size):
     return solution
 
 def ml_nqueens_solver(board_size):
-    model_path = os.path.join("..", "models", f"model_{board_size}x{board_size}.pkl")
+    model_path = os.path.join(MODEL_DIR, f"model_{board_size}x{board_size}.pkl")
     try:
         with open(model_path, "rb") as f:
             model = pickle.load(f)

@@ -15,3 +15,7 @@ Thumbs.db
 # Ignore IDE/editor folders
 .vscode/
 .idea/
+
+# Ignore data files
+.data/
+

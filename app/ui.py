@@ -1,7 +1,7 @@
 import tkinter as tk
 from tkinter import ttk
 import time
-
+import sys
 import pygame
 from grid import GridGenerator
 from solution import generate_nqueens_solution
@@ -10,12 +10,10 @@ from datetime import datetime, timedelta
 import requests
 from PIL import Image, ImageTk
 from io import BytesIO
-
 import os
+sys.path.insert(0, os.path.abspath(os.path.join(os.path.dirname(__file__), '..')))
+from config import DATA_DIR
 
-# Define and create the data directory
-DATA_DIR = os.path.join("..", "data")
-os.makedirs(DATA_DIR, exist_ok=True)
 
 class NQueensGame:
     def __init__(self, root):
