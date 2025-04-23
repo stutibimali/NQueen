@@ -122,7 +122,7 @@ python app/main.py
 Before playing, generate models:
 
 ```bash
-python ml_data_generator.py
+python app/ml_data_generator.py
 ```
 
 ---
@@ -130,7 +130,7 @@ python ml_data_generator.py
 ## 🔍 Test ML Predictions (Terminal)
 
 ```bash
-python test_ml_solver.py
+python app/test_ml_solver.py
 ```
 
 Prints predictions with per-row confidence from the ML model.
