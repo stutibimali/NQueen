@@ -2,6 +2,8 @@ import random
 import numpy as np
 from sklearn.ensemble import RandomForestClassifier
 from collections import defaultdict
+import pickle
+import os
 
 def generate_nqueens_solution(board_size, use_ml=True, use_rl=False, seed=None):
     if seed is not None:
@@ -51,20 +53,37 @@ def backtracking_solver(board_size):
     return solution
 
 def ml_nqueens_solver(board_size):
-    X_train = np.array([[i] for i in range(board_size)])
-    y_train = np.random.permutation(board_size)
+    model_path = os.path.join("..", "models", f"model_{board_size}x{board_size}.pkl")
+    try:
+        with open(model_path, "rb") as f:
+            model = pickle.load(f)
+    except FileNotFoundError:
+        return None  # fallback
 
-    model = RandomForestClassifier(n_estimators=10, random_state=42)
-    model.fit(X_train, y_train)
-
-    X_test = np.array([[i] for i in range(board_size)])
+    # Feature engineered test data
+    X_test = [[i, board_size, i % 2, i // 2] for i in range(board_size)]
     prediction = model.predict(X_test)
 
+    # 🧠 ML Confidence Debug View (optional)
+    if hasattr(model, "predict_proba"):
+        probs = model.predict_proba(X_test)
+        print("📊 ML Confidence per row:")
+        for row, prob_row in enumerate(probs):
+            confidence = max(prob_row)
+            predicted_col = prediction[row]
+            print(f"  Row {row} → Col {predicted_col} (Confidence: {confidence:.2f})")
+
+    # Ensure prediction is valid
+    if len(set(prediction)) < board_size:
+        return None
     return prediction.tolist()
+
 
 def rl_nqueens_solver(board_size):
     Q = defaultdict(float)
-    episodes = 1000
+    alpha = 0.1
+    gamma = 0.9
+    episodes = 5000
 
     def get_state_key(state):
         return tuple(state)
@@ -81,9 +100,13 @@ def rl_nqueens_solver(board_size):
             actions = [c for c in range(board_size) if is_valid(state, row, c)]
             if not actions:
                 break
-            action = np.random.choice(actions)
-            state[row] = action
-            Q[(get_state_key(state), action)] += 1.0
+            action = random.choice(actions)
+            next_state = state[:]
+            next_state[row] = action
+            reward = 1 if is_valid(next_state, row, action) else -10
+            Q[(get_state_key(state), action)] += alpha * (reward + gamma * max(
+                Q.get((get_state_key(next_state), a), 0) for a in range(board_size)) - Q[(get_state_key(state), action)])
+            state = next_state
 
     state = [-1] * board_size
     for row in range(board_size):

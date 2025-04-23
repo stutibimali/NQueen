@@ -11,6 +11,11 @@ import requests
 from PIL import Image, ImageTk
 from io import BytesIO
 
+import os
+
+# Define and create the data directory
+DATA_DIR = os.path.join("..", "data")
+os.makedirs(DATA_DIR, exist_ok=True)
 
 class NQueensGame:
     def __init__(self, root):
@@ -45,22 +50,26 @@ class NQueensGame:
         progress = ttk.Progressbar(frame, mode='indeterminate')
         progress.pack(pady=20)
         progress.start(10)
-
+    
     def load_scores(self):
+        path = os.path.join(DATA_DIR, "scoreboard.txt")
         try:
-            with open("scoreboard.txt", "r") as f:
+            with open(path, "r") as f:
                 self.previous_scores = [line.strip() for line in f.readlines()]
         except FileNotFoundError:
             self.previous_scores = []
 
+
     def save_scores(self):
-        with open("scoreboard.txt", "w") as f:
+        path = os.path.join(DATA_DIR, "scoreboard.txt")
+        with open(path, "w") as f:
             for score in self.previous_scores:
                 f.write(score + "\n")
 
     def load_high_scores(self):
+        path = os.path.join(DATA_DIR, "highscores.txt")
         try:
-            with open("highscores.txt", "r") as f:
+            with open(path, "r") as f:
                 return {int(line.split(":")[0]): int(line.split(":")[1].replace("s", "").strip()) for line in f.readlines()}
         except FileNotFoundError:
             return {}
@@ -68,7 +77,8 @@ class NQueensGame:
     def save_high_score(self, board_size, time_taken):
         high_scores = self.load_high_scores()
         high_scores[board_size] = time_taken
-        with open("highscores.txt", "w") as f:
+        path = os.path.join(DATA_DIR, "highscores.txt")
+        with open(path, "w") as f:
             for level, time_ in sorted(high_scores.items()):
                 f.write(f"{level}: {time_}s\n")
 
@@ -278,8 +288,9 @@ class NQueensGame:
         return datetime.now().strftime("%Y-%m-%d")
 
     def load_streak_data(self):
+        path = os.path.join(DATA_DIR, "streak.txt")
         try:
-            with open("streak.txt", "r") as f:
+            with open(path, "r") as f:
                 last_date, streak = f.read().strip().split(",")
                 return last_date, int(streak)
         except FileNotFoundError:
@@ -294,7 +305,8 @@ class NQueensGame:
             streak += 1
         else:
             streak = 1
-        with open("streak.txt", "w") as f:
+        path = os.path.join(DATA_DIR, "streak.txt")
+        with open(path, "w") as f:
             f.write(f"{today},{streak}")
         return streak
 
