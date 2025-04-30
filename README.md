@@ -1,188 +1,152 @@
 # ♛ N-Queens ML Challenge
 
-An intelligent N-Queens puzzle solver that combines **Machine Learning (ML)** and **Reinforcement Learning (RL)** with a polished Tkinter UI for a daily evolving challenge.
+An AI-powered twist on the classic N-Queens puzzle — designed to be a daily brain-training game that combines **Machine Learning**, **Reinforcement Learning**, and an engaging, colorful UI. Developed as a final project for DSCI 6003 by a team of Data Science Master’s students.
 
 ---
 
 ## 🎯 Objective
 
-Place `N` queens on an `N x N` board such that no two queens threaten each other — not in the same row, column, or diagonal.
+Place `N` queens on an `N x N` board such that no two queens threaten each other — no two queens in the same row, column, or diagonal.
 
-This project includes:
-- ✅ Intelligent board generation using ML (with RL fallback)
-- ✅ Difficulty scaling based on player streaks
-- ✅ Dynamic timer and color-clustered grid
-- ✅ Daily challenge logic with streak tracking
-- ✅ Polished UI with crown icons and music
-
----
-
-## 🧠 Machine Learning (ML) Used
-
-### ✅ Algorithm
-- **Model**: `RandomForestClassifier`
-- **Library**: `scikit-learn`
-
-### 📊 Data Generation
-- Uses `backtracking_solver()` to generate valid solutions for each board size (from 4x4 to 14x14).
-- For each queen placement:
-  - Input features (`X`): `[row_index, board_size, row % 2, row // 2]`
-    - `row_index`: the row number (0-based)
-    - `board_size`: the size of the current board
-    - `row % 2`: parity feature (even/odd)
-    - `row // 2`: progression grouping
-  - Target (`y`): column index where the queen is placed
-
-### 🧠 Model Training
-- Each board size has its own model: `model_4x4.pkl`, ..., `model_14x14.pkl`
-- Trained using:
-  ```python
-  RandomForestClassifier(n_estimators=100, random_state=42)
-  ```
-
-### ✅ Prediction Flow
-- During gameplay, the model:
-  - Loads the `.pkl` file corresponding to the board size
-  - Predicts queen column per row
-  - Validates if output is a proper permutation
-- Optional: Displays per-row confidence via `predict_proba`
+This daily-playable puzzle app includes:
+- 🎓 ML-driven puzzle generation and move suggestions
+- 🤖 RL-based fallback solver when ML fails
+- 🔥 Dynamic difficulty scaling with streak tracking
+- ⏳ Timed gameplay based on board size
+- 🎨 Queen-centric color visualization with crown icons
+- 🎵 Background music and themed sound effects
 
 ---
 
-## 🤖 Reinforcement Learning (RL) Used
+## 🧠 ML & RL Integration
 
-### ✅ Q-Learning (model-free)
-- Learns from scratch using trial and error (5000 episodes)
-- State = current board (partial solution), Action = column placement
-- Reward:
-  - `+1` for valid placement
-  - `-10` for conflicts
-- Bellman update rule with:
-  - `alpha = 0.1`
-  - `gamma = 0.9`
-- RL is only used when ML fails or returns an invalid solution
+### ✅ Machine Learning
+**Goal**: Predict valid queen positions per row and difficulty levels based on solve time.
 
+- **Model**: `RandomForestClassifier` per board size
+- **Features**: `[row_index, board_size, row % 2, row // 2]`
+- **Training Script**: `ml_data_generator.py`
+- **Output**: 
+  - `model_<size>x<size>.pkl` for solving
+  - `move_recommender_<size>.pkl` for real-time suggestions
+
+### 📊 Difficulty Prediction
+- Labels: Easy, Medium, Hard (based on board size and time)
+- Training: `train_difficulty_model.py` using `difficulty_data.csv`
+- Real-time prediction in UI post-game
+
+### 🤖 Reinforcement Learning (Fallback)
+- Q-learning with:
+  - State: partial board
+  - Action: column placement
+  - Reward: +1 valid, -10 conflict
+- Used if ML model fails or gives invalid output
 
 ---
 
-## 🕹 Game Features
+## 🕹️ Gameplay Features
 
-- 🎨 Colorful board with queen-centric color blocks
-- 👑 Crown icons for queens and conflict indicators
-- 🕒 Timer adjusts with board size
-- 🔁 Replay option and leaderboard
-- 🔥 Daily streak mechanic with progressive challenge
-- 🎵 Background music and sound effects
+| Feature                        | Description                                    |
+|-------------------------------|------------------------------------------------|
+| 👑 Crown Icons                | Replaces "Q" with themed icons                |
+| 🎨 Colorful Zones             | Color clusters around queen positions        |
+| 🎵 Audio System               | 3 modes: background, win, fail music          |
+| 🔁 Retry + Streak Logic       | One level per day, progressive difficulty     |
+| 📊 Analysis Panel             | Move vs ML recommendations, confidence graph  |
+| 📈 Scoreboard + High Scores   | Tracks performance and personal records       |
 
 ---
 
-## 🛠 Project Structure
+## 🗂 Project Structure
 
 ```
 NQueen/
 ├── app/
-│   ├── main.py
-│   ├── ui.py
-│   ├── grid.py
-│   ├── solution.py
-|   ├── ml_data_generator.py    # ML model training script
-|   ├── test_ml_solver.py       # Terminal-based ML testing
+│   ├── main.py                # Entry point
+│   ├── ui.py                  # Full UI + game logic
+│   ├── grid.py                # Color + layout generator
+│   ├── solution.py            # ML, RL, backtracking solvers
+│   ├── ml_data_generator.py   # ML training script
+│   ├── test_ml_solver.py      # CLI test utility
+│   ├── difficulty_label_generator.py
+│   ├── train_difficulty_model.py
+│   └── utils_difficulty.py    # Difficulty prediction
 ├── config.py
-├── .gitignore
-├── .venv
-├── models/                 # Trained ML models
-├── data/                   # Scoreboards and streak files
-├── music/                  # Game music
-├── assests/                # images 
-├── requirements.txt        # Python dependencies
+├── models/                    # Trained ML models
+├── data/                      # Game logs (scores, streaks, etc.)
+├── music/                     # Game sounds
+├── assets/                    # Images (crowns/icons)
+├── requirements.txt
 └── README.md
 ```
 
 ---
 
-## 🚀 Getting Started
+## 🚀 Setup & Run
 
-### 📦 Install Dependencies
-
+### 1. 📦 Install Requirements
 ```bash
 python -m venv .venv
 source .venv/bin/activate       # Windows: .venv\Scripts\activate
-
 pip install -r requirements.txt
 ```
 
----
-
-### ▶️ Run the Game (Tkinter)
-
-```bash
-python app/main.py
-```
-
-Before playing, generate models:
-
+### 2. 🤖 Train ML Models
 ```bash
 python app/ml_data_generator.py
 ```
 
----
+### 3. ▶️ Launch Game
+```bash
+python app/main.py
+```
 
-## 🔍 Test ML Predictions (Terminal)
-
+### 4. 🔬 Test ML Solver (CLI)
 ```bash
 python app/test_ml_solver.py
 ```
-
-Prints predictions with per-row confidence from the ML model.
 
 ---
 
 ## 📁 Output Files
 
-| File                | Purpose                        |
-|---------------------|--------------------------------|
-| `scoreboard.txt`    | Tracks completed levels        |
-| `streak.txt`        | Stores daily streak data       |
-| `highscores.txt`    | Best times per board size      |
-| `models/*.pkl`      | ML models (1 per board size)   |
+| File                     | Description                                |
+|--------------------------|--------------------------------------------|
+| `scoreboard.txt`         | Logs of each completed level               |
+| `streak.txt`             | Tracks daily streaks                       |
+| `highscores.txt`         | Personal bests per board size              |
+| `difficulty_data.csv`    | Training data for difficulty model         |
+| `models/*.pkl`           | ML models for solving & recommending moves |
 
 ---
 
-## 🙌 Built By
+## 🧑‍💻 Built By
 
-Developed by a Data Science Master's students.  
-This project demonstrates **practical ML deployment**, daily challenge logic, and clean UI/UX design.
+A team of Data Science Master's students committed to practical ML integration, creative UI design, and interactive learning:
 
----
-
-## 📌 Future Work
-
-- [ ] Online scoreboard and login
-- [ ] Drag-and-drop version for Android (via Flutter or Kivy)
-- [ ] Visualize ML vs RL performance
-- [ ] Deploy web version via Flask/Render
-
----
-
-**Solve puzzles with the power of ML and logic!♛**
-
-
-
----
-
-## © License & Copyright
-
-© 2025 N-Queens ML Challenge Team. All rights reserved.
-
-This project was developed collaboratively by a group of graduate students as part of a Machine Learning coursework project.
-
-You are welcome to use or reference this project for **educational and non-commercial purposes only**.  
-Redistribution or commercial use without written permission is prohibited.
-
-Team Members:
 - Stuti Bimali  
-- Hrishabh Mahaju
-- Binaya Dhakal
-- Aayush Dongol
+- Hrishabh Mahaju  
+- Binaya Dhakal  
+- Aayush Dongol  
 
 ---
+
+## 📌 Future Enhancements
+
+- [ ] Online user login with cloud-based scoreboard
+- [ ] Android version (Flutter/Kivy with drag-and-drop)
+- [ ] ML vs RL performance dashboard
+- [ ] Deploy web version using Flask or Streamlit
+
+---
+
+## 📚 Educational Use Notice
+
+This project is part of the DSCI 6003 Final Project: *"Mini Game with ML Integration"*  
+You may use or reference this project for **educational and non-commercial purposes only**.
+
+> © 2025 N-Queens ML Challenge Team. All rights reserved.
+
+---
+
+**Train your brain — every move counts! ♛**
