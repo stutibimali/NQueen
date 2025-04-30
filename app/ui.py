@@ -17,7 +17,7 @@ from solution import ml_nqueens_solver
 import matplotlib.pyplot as plt
 from matplotlib.backends.backend_tkagg import FigureCanvasTkAgg
 from solution import recommend_move
-
+from utils_difficulty import predict_difficulty
 class NQueensGame:
     def __init__(self, root):
         self.root = root
@@ -345,6 +345,12 @@ class NQueensGame:
         self.game_active = False
         elapsed_time = int(time.time() - self.start_time)
         today = self.get_today_date()
+        try:
+            difficulty = predict_difficulty(self.board_size, elapsed_time)
+            print(f"Predicted difficulty: {difficulty}")
+        except Exception as e:
+            print(f"Difficulty prediction failed: {e}")
+            difficulty = "Unknown"
 
         new_record = False
         if not failed:
