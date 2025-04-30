@@ -13,7 +13,10 @@ from io import BytesIO
 import os
 sys.path.insert(0, os.path.abspath(os.path.join(os.path.dirname(__file__), '..')))
 from config import DATA_DIR
-
+from solution import ml_nqueens_solver
+import matplotlib.pyplot as plt
+from matplotlib.backends.backend_tkagg import FigureCanvasTkAgg
+from solution import recommend_move
 
 class NQueensGame:
     def __init__(self, root):
@@ -29,6 +32,12 @@ class NQueensGame:
         self.original_colors = {}
         self.level = 1
         self.play_music = True
+        self.confidences = []
+        self.recommendations = []  # row: recommended col
+        self.mistakes = []         # list of (row, placed_col, recommended_col)
+        self.mistake_rows = set()
+        self.user_moves = []
+
         self.crown_image = ImageTk.PhotoImage(Image.open("../assets/crown.png").resize((32, 32)))
         self.crownconflict_image = ImageTk.PhotoImage(Image.open("../assets/swords.png").resize((32, 32)))
         pygame.mixer.init()
@@ -49,6 +58,54 @@ class NQueensGame:
         progress.pack(pady=20)
         progress.start(10)
     
+    def show_analysis_graph(self):
+        if not hasattr(self, "recommendations") or not self.recommendations:
+            print("⚠️ No move data to analyze.")
+            return
+
+        analysis_window = tk.Toplevel(self.root)
+        analysis_window.title("📊 ML Move Analysis")
+
+        frame = ttk.Frame(analysis_window, padding=10)
+        frame.pack(fill="both", expand=True)
+
+        # === Plot 1: Confidence vs Mistake ===
+        fig1, ax1 = plt.subplots(figsize=(6, 3.5))
+        rows = list(range(len(self.confidences)))
+        ax1.plot(rows, self.confidences, label="Confidence", marker="o", color="blue")
+        
+        for idx in self.mistake_rows:
+            if idx < len(self.confidences):
+                ax1.plot(idx, self.confidences[idx], marker="x", color="red", markersize=10, label="Mistake" if idx == list(self.mistake_rows)[0] else "")
+
+        ax1.set_ylim(0, 1)
+        ax1.set_title("Confidence & Mistake Highlight")
+        ax1.set_xlabel("Row")
+        ax1.set_ylabel("Confidence")
+        ax1.legend()
+
+        canvas1 = FigureCanvasTkAgg(fig1, master=frame)
+        canvas1.draw()
+        canvas1.get_tk_widget().pack(pady=10)
+
+        # === Plot 2: Actual vs Recommended ===
+        fig2, ax2 = plt.subplots(figsize=(6, 3.5))
+        rows = list(range(len(self.user_moves)))
+        actual = [col for _, col in self.user_moves]
+        recommended = [col for _, col in self.recommendations[:len(self.user_moves)]]
+
+        ax2.plot(rows, recommended, label="Recommended", marker="o", color="green")
+        ax2.plot(rows, actual, label="Your Move", marker="x", color="orange")
+        ax2.set_title("Your Move vs ML Recommendation")
+        ax2.set_xlabel("Row")
+        ax2.set_ylabel("Column")
+        ax2.legend()
+        ax2.grid(True)
+
+        canvas2 = FigureCanvasTkAgg(fig2, master=frame)
+        canvas2.draw()
+        canvas2.get_tk_widget().pack(pady=10)
+
     def load_scores(self):
         path = os.path.join(DATA_DIR, "scoreboard.txt")
         try:
@@ -145,7 +202,15 @@ class NQueensGame:
             return colors
 
         self.colors = random.sample(generate_distinct_colors(self.board_size),min(self.board_size, 14))
-        self.solution = generate_nqueens_solution(self.board_size, use_ml=True, use_rl=True)
+        self.solution, self.confidences = ml_nqueens_solver(self.board_size)
+        if self.solution is None:
+            self.solution = generate_nqueens_solution(self.board_size, use_ml=False, use_rl=True)
+            self.confidences = [0.0] * self.board_size
+        self.mistake_rows = set()
+        self.user_moves = []
+        self.recommendations = [(i, col) for i, col in enumerate(self.solution)]
+        self.mistakes = [False] * self.board_size
+
         self.grid_generator = GridGenerator(self.board_size, self.colors, seed=random.randint(0, 100000))
         self.grid = self.grid_generator.generate_grid(self.solution)
 
@@ -235,6 +300,22 @@ class NQueensGame:
         valid = self.is_valid_placement(row, col)
         self.queen_positions[(row, col)] = valid
         self.error_label.config(text="" if valid else "Invalid placement!")
+        self.user_moves.append((row, col))  # Record actual move
+
+        # ✅ Use initial ML recommendation from self.recommendations
+        if self.recommendations and row < len(self.recommendations):
+            predicted_col = self.recommendations[row][1]
+            if predicted_col != col:
+                self.mistakes.append((row, col, predicted_col))
+                self.mistake_rows.add(row)
+
+        # 🧠 Optionally compare with dynamic model recommendation
+        partial = [-1] * self.board_size
+        for (r, c), _ in self.queen_positions.items():
+            partial[r] = c
+        dynamic_recommended = recommend_move(partial, self.board_size)
+        self.recommendations.append((row, dynamic_recommended))
+
         self.display_grid()
 
     def remove_queen(self, event):
@@ -336,7 +417,11 @@ class NQueensGame:
             return colors
 
         self.colors = random.sample(generate_distinct_colors(self.board_size), min(self.board_size, 14))
-        self.solution = generate_nqueens_solution(self.board_size, use_ml=True, use_rl=True)
+        self.solution, self.confidences = ml_nqueens_solver(self.board_size)
+        if self.solution is None:
+            self.solution = generate_nqueens_solution(self.board_size, use_ml=False, use_rl=True)
+            self.confidences = [0.0] * self.board_size
+        self.mistake_rows = set()
         self.grid_generator = GridGenerator(self.board_size, self.colors, seed=random.randint(0, 100000))
         self.grid = self.grid_generator.generate_grid(self.solution)
 
@@ -387,7 +472,6 @@ class NQueensGame:
 
 
             ttk.Button(frame, text="🔁 Try Same Level", command=retry_same_level).pack(pady=5)
-
         else:
             pygame.mixer.music.stop()
             pygame.mixer.music.load("../music/Boss Clear.mp3")
@@ -406,4 +490,4 @@ class NQueensGame:
             ttk.Label(frame, text=f"🔥 Current Streak: {streak} day{'s' if streak > 1 else ''}", font=("Arial", 12)).pack(pady=10)
         ttk.Button(frame, text="🔁 New Game", command=self.start_game).pack(pady=5)
         ttk.Button(frame, text="🏠 Back to Home", command=self.show_welcome_screen).pack(pady=5)
-
+        ttk.Button(frame, text="🔍 Analyze Moves", command=self.show_analysis_graph).pack(pady=5)
